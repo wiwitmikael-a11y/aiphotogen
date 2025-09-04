@@ -1,0 +1,5 @@
+{
+  "name": "AI Photorealistic Portrait Generator",
+  "description": "An AI-powered application that takes a facial photo as input and generates ultra-photorealistic portraits with customizable poses, backgrounds, and attributes.",
+  "requestFramePermissions": []
+}
