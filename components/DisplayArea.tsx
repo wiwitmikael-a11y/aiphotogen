@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LoaderIcon } from './icons/LoaderIcon';
 
@@ -27,17 +26,37 @@ const LoadingState: React.FC = () => (
 );
 
 const ErrorState: React.FC<{ message: string }> = ({ message }) => {
+  const isAuthError = /authentication|token|authorization/i.test(message);
   const isSafetyError = message.includes("blocked by safety policies");
   const modelResponseMessage = message.startsWith("Model response:") ? message.replace("Model response:", "").trim() : null;
 
   return (
-    <div className="text-center animate-fade-in p-6 bg-red-900/20 border border-red-500 rounded-lg max-w-2xl">
+    <div className="text-center animate-fade-in p-6 bg-red-900/20 border border-red-500 rounded-lg max-w-2xl mx-auto">
       <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <h3 className="text-xl font-semibold text-red-300">Generation Failed</h3>
       
-      {modelResponseMessage ? (
+      {isAuthError ? (
+        <div className="mt-4 text-left bg-base-300/50 p-4 rounded-md">
+          <h4 className="font-bold text-yellow-300">Authentication Error Detected</h4>
+          <p className="text-yellow-400 mt-1 italic">"{message}"</p>
+          <p className="text-text-secondary mt-3">
+            This likely means your Replicate API Token is missing or incorrect. Please follow these steps:
+          </p>
+          <ul className="list-disc list-inside space-y-2 mt-3 text-text-secondary text-sm">
+            <li>
+              <strong>For the live website:</strong> Go to your project settings on Vercel, find "Environment Variables", and ensure `REPLICATE_API_TOKEN` is set correctly. You may need to redeploy.
+            </li>
+            <li>
+              <strong>For local development:</strong> Ensure you have a `.env` file in your project root with the line `REPLICATE_API_TOKEN=r8_...` and restart your `vercel dev` server.
+            </li>
+          </ul>
+           <p className="text-xs text-gray-400 mt-3">
+            Refer to the `README.md` file for more detailed instructions.
+          </p>
+        </div>
+      ) : modelResponseMessage ? (
         <div className="mt-4 text-left bg-base-300/50 p-3 rounded-md">
           <p className="font-semibold text-text-secondary">The AI model responded with a message:</p>
           <p className="text-red-400 mt-1 italic">"{modelResponseMessage}"</p>
@@ -46,7 +65,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => {
          <p className="text-red-400 mt-2">{message}</p>
       )}
 
-      {(isSafetyError || modelResponseMessage) && (
+      {(!isAuthError && (isSafetyError || modelResponseMessage)) && (
         <div className="mt-6 text-left text-text-secondary text-sm space-y-2">
            <h4 className="font-semibold text-text-primary">What you can try:</h4>
            <ul className="list-disc list-inside space-y-1">

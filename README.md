@@ -83,3 +83,24 @@ This error means the `vercel dev` command is not running.
 1.  Make sure you have installed the Vercel CLI (`npm install -g vercel`).
 2.  **You must run `vercel dev` in your terminal and keep that terminal window open while you use the application locally.**
 3.  The first time you run `vercel dev`, it might ask to link the project and download your environment variables. Say yes (`Y`) to these prompts.
+
+### Error: "You did not pass a valid authentication token"
+
+This is a common error after setup. It means the backend successfully contacted Replicate, but Replicate rejected the request due to an invalid or missing API key.
+
+**Solution:** Verify that your `REPLICATE_API_TOKEN` is correctly configured.
+
+#### ➡️ Fixing on Vercel (Live Website)
+1.  Go to your **Vercel Dashboard** and select your project.
+2.  Navigate to the **Settings** tab, then click on **Environment Variables**.
+3.  Check that a variable named `REPLICATE_API_TOKEN` exists.
+4.  **Verify its value.** Ensure there are no extra spaces. The value must start with `r8_...`.
+5.  If you make any changes, you may need to trigger a new deployment. Go to the **Deployments** tab and redeploy the latest commit.
+
+#### ➡️ Fixing on Local Development (`vercel dev`)
+1.  In the **root directory** of your project, ensure you have a file named exactly `.env`.
+2.  Open the `.env` file and ensure it contains the line (replace with your actual token):
+    ```
+    REPLICATE_API_TOKEN=r8_YourSecretReplicateTokenHere
+    ```
+3.  **Important:** If `vercel dev` is running, you **must stop it** (Ctrl + C) and **restart it** for it to load the changes from the `.env` file.
