@@ -7,32 +7,34 @@
     <title>AI Photorealistic Portrait Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'brand-primary': '#4f46e5',
-              'brand-secondary': '#7c3aed',
-              'brand-light': '#a5b4fc',
-              'base-100': '#1f2937',
-              'base-200': '#374151',
-              'base-300': '#4b5563',
-              'text-primary': '#f9fafb',
-              'text-secondary': '#d1d5db',
-            },
-            animation: {
-              'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'fade-in': 'fadeIn 0.5s ease-in-out',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
+      document.addEventListener('DOMContentLoaded', function() {
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                'brand-primary': '#4f46e5',
+                'brand-secondary': '#7c3aed',
+                'brand-light': '#a5b4fc',
+                'base-100': '#1f2937',
+                'base-200': '#374151',
+                'base-300': '#4b5563',
+                'text-primary': '#f9fafb',
+                'text-secondary': '#d1d5db',
               },
+              animation: {
+                'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'fade-in': 'fadeIn 0.5s ease-in-out',
+              },
+              keyframes: {
+                fadeIn: {
+                  '0%': { opacity: '0' },
+                  '100%': { opacity: '1' },
+                },
+              }
             }
           }
         }
-      }
+      });
     </script>
   <script type="importmap">
 {
