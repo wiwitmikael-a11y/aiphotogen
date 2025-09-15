@@ -1,37 +1,20 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
-import { EnhancedControlPanel } from './components/EnhancedControlPanel';
+import AdvancedControlPanel from './components/AdvancedControlPanel';
 import { DisplayArea } from './components/DisplayArea';
 import type { GenerationOptions, UploadedImage } from './types';
-import { generateImage, checkServerStatus } from './services/aiService';
+import EnhancedAIService from './services/enhancedAIService';
 
 const App: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isServerOnline, setIsServerOnline] = useState<boolean>(true);
+  const [aiService] = useState(new EnhancedAIService());
 
-  // Periodically check if the local proxy server is running
-  useEffect(() => {
-    const checkStatus = async () => {
-      const status = await checkServerStatus();
-      setIsServerOnline(status);
-    };
-
-    checkStatus(); // Check immediately on load
-    const intervalId = setInterval(checkStatus, 5000); // And every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on component unmount
-  }, []);
-  
   const handleGeneration = useCallback(async (options: GenerationOptions) => {
     if (!uploadedImage) {
       setError("Please upload an image first.");
-      return;
-    }
-    if (!isServerOnline) {
-      setError("Cannot generate image. The local AI server is not running.");
       return;
     }
 
@@ -40,8 +23,10 @@ const App: React.FC = () => {
     setGeneratedImage(null);
 
     try {
-      // The service now calls our secure backend proxy
-      const result = await generateImage(uploadedImage, options);
+      // Use enhanced AI service with multiple uncensored models
+      const result = await aiService.generateImage(uploadedImage, options, (progress) => {
+        console.log('Generation progress:', progress);
+      });
       setGeneratedImage(result);
     } catch (err) {
       console.error(err);
@@ -49,7 +34,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [uploadedImage, isServerOnline]);
+  }, [uploadedImage, aiService]);
   
   return (
     <div className="min-h-screen bg-base-100 text-text-primary font-sans">
@@ -57,12 +42,12 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 xl:col-span-3">
-            <EnhancedControlPanel 
+            <AdvancedControlPanel 
               onGenerate={handleGeneration} 
               isLoading={isLoading}
               uploadedImage={uploadedImage}
               setUploadedImage={setUploadedImage}
-              isServerOnline={isServerOnline}
+              isServerOnline={true}
             />
           </div>
           <div className="lg:col-span-8 xl:col-span-9">
