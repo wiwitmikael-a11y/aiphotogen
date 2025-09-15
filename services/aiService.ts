@@ -49,17 +49,19 @@ export async function analyzeBodyParameters(image: UploadedImage): Promise<any> 
 }
 
 /**
- * Generate ultra photorealistic portrait using FLUX + PuLID
- * Enhanced with body parameter detection and uncensored mode
+ * Generate ultra photorealistic portrait using FLUX + PuLID with progress tracking
  * @param image The uploaded face image.
  * @param options The enhanced generation options.
+ * @param onProgress Callback for progress updates.
  * @returns A URL to the generated image.
  */
 export async function generateImage(
   image: UploadedImage,
   options: GenerationOptions,
+  onProgress?: (progress: any) => void
 ): Promise<string> {
   try {
+    // Start generation and get request ID
     const response = await fetch(GENERATE_URL, {
       method: "POST",
       headers: {
@@ -74,7 +76,48 @@ export async function generateImage(
     }
 
     const result = await response.json();
-    return result.imageUrl;
+    const requestId = result.requestId;
+    
+    if (!requestId) {
+      throw new Error('No request ID received from server');
+    }
+
+    // Set up progress tracking via SSE
+    return new Promise((resolve, reject) => {
+      const eventSource = new EventSource(`/api/generate/progress/${requestId}`);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (onProgress) {
+            onProgress(data);
+          }
+          
+          if (data.type === 'result' && data.status === 'completed') {
+            eventSource.close();
+            resolve(data.imageUrl);
+          } else if (data.type === 'error' || data.status === 'failed') {
+            eventSource.close();
+            reject(new Error(data.error || 'Generation failed'));
+          }
+        } catch (err) {
+          console.error('Error parsing progress data:', err);
+        }
+      };
+      
+      eventSource.onerror = (error) => {
+        console.error('SSE error:', error);
+        eventSource.close();
+        reject(new Error('Connection to generation service lost'));
+      };
+      
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        eventSource.close();
+        reject(new Error('Generation timeout'));
+      }, 300000);
+    });
 
   } catch (err) {
     if (err instanceof TypeError) {

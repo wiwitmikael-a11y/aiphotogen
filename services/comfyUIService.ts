@@ -20,6 +20,8 @@ export interface FaceSwapRequest {
   lighting: string;
   style: string;
   strength: number; // 0-1 for face similarity
+  qualityMode: 'fast' | 'balanced' | 'high';
+  enableHQRefinement: boolean;
 }
 
 export interface ComfyUIResponse {
@@ -111,18 +113,59 @@ class ComfyUIService {
   }
 
   /**
-   * Build FLUX + PuLID workflow for ComfyAI
+   * Get optimized parameters based on quality mode
+   */
+  private getQualityParams(mode: 'fast' | 'balanced' | 'high') {
+    switch (mode) {
+      case 'fast':
+        return {
+          width: 640,
+          height: 896,
+          steps: 8,
+          cfg: 3.0,
+          sampler: 'dpmpp_2m',
+          scheduler: 'karras',
+          model: 'flux1-schnell.safetensors'
+        };
+      case 'balanced':
+        return {
+          width: 768,
+          height: 1024,
+          steps: 16,
+          cfg: 3.5,
+          sampler: 'euler',
+          scheduler: 'simple',
+          model: 'flux1-dev.safetensors'
+        };
+      case 'high':
+        return {
+          width: 1024,
+          height: 1366,
+          steps: 24,
+          cfg: 4.0,
+          sampler: 'dpmpp_2m',
+          scheduler: 'karras',
+          model: 'flux1-dev.safetensors'
+        };
+      default:
+        return this.getQualityParams('balanced');
+    }
+  }
+
+  /**
+   * Build optimized FLUX + PuLID workflow for ComfyAI
    */
   private buildFluxPuLIDWorkflow(request: FaceSwapRequest) {
+    const params = this.getQualityParams(request.qualityMode);
     return {
       "3": {
         "class_type": "KSampler",
         "inputs": {
           "seed": Math.floor(Math.random() * 1000000),
-          "steps": 20,
-          "cfg": 3.5,
-          "sampler_name": "euler",
-          "scheduler": "simple",
+          "steps": params.steps,
+          "cfg": params.cfg,
+          "sampler_name": params.sampler,
+          "scheduler": params.scheduler,
           "denoise": 1,
           "model": ["22", 0],
           "positive": ["6", 0],
@@ -133,14 +176,14 @@ class ComfyUIService {
       "4": {
         "class_type": "CheckpointLoaderSimple",
         "inputs": {
-          "ckpt_name": "flux1-dev.safetensors"
+          "ckpt_name": params.model
         }
       },
       "5": {
         "class_type": "EmptyLatentImage", 
         "inputs": {
-          "width": 768,
-          "height": 1024,
+          "width": params.width,
+          "height": params.height,
           "batch_size": 1
         }
       },
@@ -154,7 +197,7 @@ class ComfyUIService {
       "7": {
         "class_type": "CLIPTextEncode",
         "inputs": {
-          "text": "deformed, distorted, disfigured, poorly drawn, bad anatomy, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text, nsfw, explicit, nude, sexual",
+          "text": "deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, mutated hands, mutated fingers, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text, nsfw, explicit, nude, sexual, oversaturated, over-smoothed, waxy skin, plastic skin, artificial, digital artifacts, compression artifacts, lens flare, chromatic aberration",
           "clip": ["4", 1]
         }
       },
@@ -199,32 +242,54 @@ class ComfyUIService {
   }
 
   /**
-   * Build advanced prompt with AI-detected body parameters
+   * Build advanced prompt with AI-detected body parameters and technical quality tokens
    */
   private buildAdvancedPrompt(request: FaceSwapRequest): string {
-    const { targetPrompt, bodyType, pose, background, lighting, style } = request;
+    const { targetPrompt, bodyType, pose, background, lighting, style, qualityMode } = request;
     
-    const basePrompt = `ultra photorealistic studio portrait, professional photography, ${targetPrompt}`;
-    const bodyParams = `body type: ${bodyType}, pose: ${pose}`;
-    const environmentParams = `background: ${background}, lighting: ${lighting}`;
-    const styleParams = `style: ${style}, 8K resolution, masterpiece, best quality`;
+    // Quality-specific technical tokens
+    const qualityTokens = qualityMode === 'high' 
+      ? 'ultra photorealistic, hyper-detailed, professional commercial photography, 8K resolution, RAW photo quality, perfect skin texture, natural lighting, sharp focus, depth of field, bokeh, cinematic composition'
+      : qualityMode === 'fast'
+      ? 'photorealistic portrait, professional photography, high quality, detailed'
+      : 'ultra photorealistic studio portrait, professional photography, high detail, sharp focus';
+    
+    // Camera and technical specifications for better quality
+    const cameraSpecs = qualityMode === 'high'
+      ? 'shot with Canon EOS R5, 85mm lens, f/2.8, natural skin tones, professional retouching'
+      : 'professional camera, portrait lens, natural lighting';
+    
+    const basePrompt = `${qualityTokens}, ${targetPrompt}, ${cameraSpecs}`;
+    const bodyParams = `body composition: ${bodyType}, pose and expression: ${pose}`;
+    const environmentParams = `setting: ${background}, lighting setup: ${lighting}`;
+    const styleParams = `photographic style: ${style}, masterpiece quality, best composition`;
     
     return `${basePrompt}, ${bodyParams}, ${environmentParams}, ${styleParams}`;
   }
 
   /**
-   * Poll for completion status
+   * Poll for completion status with optimized intervals
    */
   private async pollForCompletion(queueId: string): Promise<ComfyUIResponse> {
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 120; // 4 minutes max with faster polling
     
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      // Dynamic polling intervals: start fast, then slow down
+      const interval = attempts < 5 ? 1000 : attempts < 20 ? 2000 : 3000;
+      await new Promise(resolve => setTimeout(resolve, interval));
       
       try {
         const statusResponse = await fetch(`${this.config.baseUrl}/api/status/${queueId}`);
         const status = await statusResponse.json();
+        
+        // Log progress for better UX
+        if (status.progress) {
+          console.log(`Generation progress: ${Math.round(status.progress * 100)}%`);
+        }
+        if (status.queuePosition > 0) {
+          console.log(`Queue position: ${status.queuePosition}`);
+        }
         
         if (status.status === 'completed') {
           return {
@@ -247,7 +312,7 @@ class ComfyUIService {
     
     return {
       status: 'failed',
-      error: 'Generation timeout'
+      error: 'Generation timeout - try using fast mode for quicker results'
     };
   }
 
@@ -297,3 +362,4 @@ class ComfyUIService {
 }
 
 export default ComfyUIService;
+export { ComfyUIService };

@@ -101,6 +101,8 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
     style: 'ultra high-resolution commercial photography style',
     bodyType: 'elegant athletic build, model-like proportions',
     strength: 0.8,
+    qualityMode: 'balanced',
+    enableHQRefinement: false,
   });
 
   const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(null);
@@ -259,6 +261,37 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
           
           {showAdvanced && (
             <div className="mt-4 space-y-4 p-4 bg-base-300/50 rounded-lg">
+              {/* Quality Mode Selection */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-text-secondary">
+                  🎯 Quality Mode
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['fast', 'balanced', 'high'].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleInputChange('qualityMode', mode)}
+                      className={`px-3 py-2 text-xs rounded-md border transition duration-150 ${
+                        options.qualityMode === mode
+                          ? 'bg-brand-primary border-brand-primary text-white'
+                          : 'bg-base-200 border-base-300 text-text-secondary hover:border-brand-light'
+                      }`}
+                    >
+                      <div className="font-medium capitalize">{mode}</div>
+                      <div className="text-xs opacity-75">
+                        {mode === 'fast' && '~2-5s • 640x896'}
+                        {mode === 'balanced' && '~5-10s • 768x1024'}
+                        {mode === 'high' && '~10-20s • 1024x1366'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-text-secondary opacity-75">
+                  Fast: Quick preview • Balanced: Best quality/speed ratio • High: Maximum detail
+                </p>
+              </div>
+
               <AdvancedSlider
                 id="strength"
                 label="Face Similarity Strength"
@@ -269,6 +302,22 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
                 onChange={(value) => handleInputChange('strength', value)}
                 description="How closely the generated image matches the uploaded face"
               />
+              
+              {/* High Quality Refinement Toggle */}
+              {options.qualityMode !== 'fast' && (
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="enableHQRefinement"
+                    checked={options.enableHQRefinement}
+                    onChange={(e) => handleInputChange('enableHQRefinement', e.target.checked)}
+                    className="rounded border-base-300 text-brand-primary focus:ring-brand-primary"
+                  />
+                  <label htmlFor="enableHQRefinement" className="text-sm font-medium text-text-secondary">
+                    ✨ Enable HQ Refinement (+10-15s)
+                  </label>
+                </div>
+              )}
               
               <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-md text-xs text-blue-300">
                 <span className="font-bold">🔒 Content Policy:</span> Professional portraits only. Explicit content is not permitted.
@@ -298,7 +347,8 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
         
         {uploadedImage && isServerOnline && (
           <p className="text-xs text-center text-text-secondary">
-            Using FLUX.1 + PuLID-FLUX II • Professional Mode
+            Using FLUX.1 + PuLID-FLUX II • {options.qualityMode.charAt(0).toUpperCase() + options.qualityMode.slice(1)} Quality
+            {options.enableHQRefinement && ' • HQ Refinement Enabled'}
           </p>
         )}
       </form>

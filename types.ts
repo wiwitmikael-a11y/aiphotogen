@@ -7,6 +7,8 @@ export interface GenerationOptions {
   style: string;
   bodyType: string;
   strength: number;
+  qualityMode: 'fast' | 'balanced' | 'high';
+  enableHQRefinement: boolean;
 }
 
 export interface UploadedImage {
