@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
-import { ControlPanel } from './components/ControlPanel';
+import { EnhancedControlPanel } from './components/EnhancedControlPanel';
 import { DisplayArea } from './components/DisplayArea';
 import type { GenerationOptions, UploadedImage } from './types';
 import { generateImage, checkServerStatus } from './services/aiService';
@@ -57,7 +57,7 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 xl:col-span-3">
-            <ControlPanel 
+            <EnhancedControlPanel 
               onGenerate={handleGeneration} 
               isLoading={isLoading}
               uploadedImage={uploadedImage}

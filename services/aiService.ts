@@ -20,10 +20,39 @@ export async function checkServerStatus(): Promise<boolean> {
 
 
 /**
- * Sends the generation request to our secure serverless function.
- * The function will handle the Replicate API call.
+ * Analyze uploaded image for optimal body parameters
+ * @param image The uploaded face image
+ * @returns AI-generated body analysis with suggestions
+ */
+export async function analyzeBodyParameters(image: UploadedImage): Promise<any> {
+  try {
+    const response = await fetch('/api/analyze-body', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Body analysis failed with status ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error("Failed to connect to the AI server for body analysis.");
+    }
+    throw err;
+  }
+}
+
+/**
+ * Generate ultra photorealistic portrait using FLUX + PuLID
+ * Enhanced with body parameter detection and uncensored mode
  * @param image The uploaded face image.
- * @param options The user-defined generation options.
+ * @param options The enhanced generation options.
  * @returns A URL to the generated image.
  */
 export async function generateImage(
@@ -48,10 +77,9 @@ export async function generateImage(
     return result.imageUrl;
 
   } catch (err) {
-    if (err instanceof TypeError) { // This often indicates a network error (e.g., proxy not running)
-        throw new Error("Failed to connect to the local AI server. Is it running?");
+    if (err instanceof TypeError) {
+      throw new Error("Failed to connect to the AI server. Is it running?");
     }
-    // Re-throw other errors
     throw err;
   }
 }
