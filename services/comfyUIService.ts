@@ -19,7 +19,6 @@ export interface FaceSwapRequest {
   background: string;
   lighting: string;
   style: string;
-  nsfwMode: boolean;
   strength: number; // 0-1 for face similarity
 }
 
@@ -155,7 +154,7 @@ class ComfyUIService {
       "7": {
         "class_type": "CLIPTextEncode",
         "inputs": {
-          "text": "deformed, distorted, disfigured, poorly drawn, bad anatomy, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text",
+          "text": "deformed, distorted, disfigured, poorly drawn, bad anatomy, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text, nsfw, explicit, nude, sexual",
           "clip": ["4", 1]
         }
       },

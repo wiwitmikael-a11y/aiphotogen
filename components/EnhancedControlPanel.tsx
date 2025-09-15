@@ -17,7 +17,7 @@ const ServerStatusIndicator: React.FC<{ isOnline: boolean }> = ({ isOnline }) =>
     return (
       <div className="p-3 mb-4 bg-green-900/30 border border-green-700 rounded-lg text-green-300">
         <h3 className="font-bold text-sm">🚀 Ultra AI Studio Ready</h3>
-        <p className="text-xs mt-1">FLUX + PuLID-FLUX II model loaded • Uncensored mode available</p>
+        <p className="text-xs mt-1">FLUX + PuLID-FLUX II model loaded • Professional portraits only</p>
       </div>
     );
   }
@@ -100,7 +100,6 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
     lighting: 'professional studio lighting with soft key light',
     style: 'ultra high-resolution commercial photography style',
     bodyType: 'elegant athletic build, model-like proportions',
-    nsfwMode: false,
     strength: 0.8,
   });
 
@@ -271,21 +270,9 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
                 description="How closely the generated image matches the uploaded face"
               />
               
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="nsfwMode"
-                  checked={options.nsfwMode}
-                  onChange={(e) => handleInputChange('nsfwMode', e.target.checked)}
-                  className="rounded border-base-300 text-brand-primary focus:ring-brand-primary"
-                />
-                <label htmlFor="nsfwMode" className="text-sm font-medium text-text-secondary">
-                  🔓 Uncensored Mode (NSFW)
-                </label>
+              <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-md text-xs text-blue-300">
+                <span className="font-bold">🔒 Content Policy:</span> Professional portraits only. Explicit content is not permitted.
               </div>
-              <p className="text-xs text-text-secondary opacity-75">
-                Enable uncensored image generation without content restrictions
-              </p>
             </div>
           )}
         </div>
@@ -304,14 +291,14 @@ export const EnhancedControlPanel: React.FC<EnhancedControlPanelProps> = ({
           ) : (
             <>
               <SparklesIcon className="w-5 h-5 mr-2" />
-              Generate Ultra Portrait {options.nsfwMode ? '(Uncensored)' : ''}
+              Generate Professional Portrait
             </>
           )}
         </button>
         
         {uploadedImage && isServerOnline && (
           <p className="text-xs text-center text-text-secondary">
-            Using FLUX.1 + PuLID-FLUX II • {options.nsfwMode ? 'Uncensored' : 'Standard'} Mode
+            Using FLUX.1 + PuLID-FLUX II • Professional Mode
           </p>
         )}
       </form>

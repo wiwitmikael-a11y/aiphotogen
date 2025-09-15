@@ -120,7 +120,6 @@ async function generateWithComfyAI(request) {
   console.log('🤖 AI Parameters:', {
     bodyType: request.bodyType,
     pose: request.pose,
-    nsfwMode: request.nsfwMode ? 'UNCENSORED MODE' : 'Standard mode',
     strength: request.strength
   });
   
@@ -156,11 +155,8 @@ function buildFluxPuLIDWorkflow(request) {
   return {
     model: 'FLUX.1-schnell',
     face_swap_model: 'PuLID-FLUX-II',
-    uncensored: request.nsfwMode,
     prompt: request.targetPrompt,
-    negative_prompt: request.nsfwMode ? 
-      'low quality, blurry, pixelated' : 
-      'deformed, distorted, disfigured, poorly drawn, bad anatomy, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text',
+    negative_prompt: 'deformed, distorted, disfigured, poorly drawn, bad anatomy, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text, nsfw, explicit, nude, sexual',
     strength: request.strength,
     steps: 20,
     guidance_scale: 3.5,
@@ -191,12 +187,47 @@ app.post('/api/analyze-body', async (req, res) => {
   }
 });
 
+// Content moderation function
+function moderateContent(options) {
+  const explicitTerms = [
+    'nude', 'naked', 'nsfw', 'explicit', 'sexual', 'erotic', 'pornographic',
+    'masturbation', 'masturbating', 'sex', 'vagina', 'penis', 'breast', 'nipple',
+    'anal', 'pussy', 'dick', 'cock', 'tits', 'ass', 'topless', 'bottomless'
+  ];
+  
+  const contentToCheck = [
+    options.pose || '',
+    options.background || '',
+    options.clothing || '',
+    options.lighting || '',
+    options.style || '',
+    options.bodyType || ''
+  ].join(' ').toLowerCase();
+  
+  for (const term of explicitTerms) {
+    if (contentToCheck.includes(term)) {
+      return {
+        blocked: true,
+        reason: `Content blocked: Contains inappropriate term "${term}". This application is for professional portraits only.`
+      };
+    }
+  }
+  
+  return { blocked: false };
+}
+
 // Ultra Photorealistic Portrait Generation endpoint - UPGRADED WITH COMFYUI
 app.post('/api/generate', async (req, res) => {
   try {
     const { image, options } = req.body;
     if (!image || !options) {
       return res.status(400).json({ error: 'Missing image or options in request body.' });
+    }
+    
+    // Content moderation
+    const moderation = moderateContent(options);
+    if (moderation.blocked) {
+      return res.status(400).json({ error: moderation.reason });
     }
 
     // Build ComfyUI request
@@ -208,7 +239,6 @@ app.post('/api/generate', async (req, res) => {
       background: options.background,
       lighting: options.lighting,
       style: options.style,
-      nsfwMode: options.nsfwMode || false,
       strength: options.strength || 0.8
     };
 

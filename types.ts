@@ -6,7 +6,6 @@ export interface GenerationOptions {
   lighting: string;
   style: string;
   bodyType: string;
-  nsfwMode: boolean;
   strength: number;
 }
 
