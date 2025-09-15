@@ -1,106 +1,59 @@
-# AI Photorealistic Portrait Generator v5.0 (Vercel Serverless Architecture)
+# AI Photorealistic Portrait Generator - Replit Edition
 
-This application has been upgraded to a professional, serverless architecture using Vercel. This is the modern, secure, and scalable way to build and deploy web applications.
+A professional portrait generation application that creates photorealistic images using advanced AI models. Now optimized for Replit deployment with ComfyUI integration.
 
-**Forget local servers and `npm start`. Welcome to the future of web development.**
+## Features
 
----
+- **Face-based Portrait Generation**: Upload a photo and generate professional portraits
+- **AI Body Analysis**: Automatic analysis of optimal poses, lighting, and styling
+- **Professional Quality**: Ultra-photorealistic results using FLUX + PuLID models
+- **Real-time Preview**: Live feedback and generation status
+- **Replit Optimized**: Configured for seamless Replit deployment
 
-## How It Works (Serverless Architecture)
+## Architecture
 
-1.  **Frontend (React App)**: The user interface you see in the browser. It's the "static" part of your site.
-2.  **Serverless Functions (Vercel)**: Your backend code (image generation, API key handling) now lives in the `/api` directory. Vercel automatically deploys these as individual serverless functions in the cloud. They only run when a request is made, making them highly efficient. Your API key is stored securely in Vercel's environment variables, never exposed to the frontend.
+- **Frontend**: React with TypeScript, Vite build system
+- **Backend**: Express.js server with ComfyUI integration
+- **AI Engine**: ComfyUI with FLUX and PuLID models for photorealistic generation
+- **Deployment**: Optimized for Replit hosting
 
----
+## Local Development in Replit
 
-## Step 1: Get the Code on GitHub (Required)
+The application is already configured for Replit. Simply click "Run" to start both the frontend and backend servers.
 
-This workflow requires your project to be in a GitHub repository.
+- Frontend runs on port 5000 (user-facing)
+- Backend API runs on port 3001 (internal)
+- Vite automatically proxies API requests
 
-**1. Create a `.gitignore` file:**
-Before you upload your code, create a file named `.gitignore` in your project's root directory. This is **CRITICAL** for security. Copy and paste the following into it:
-```
-# Dependencies
-/node_modules
+## API Endpoints
 
-# Environment Variables
-.env
-.env*.local
+- `GET /api/health` - Health check endpoint
+- `POST /api/analyze-body` - AI body analysis for uploaded images
+- `POST /api/generate` - Generate photorealistic portraits
 
-# Vercel
-.vercel
-```
+## Configuration
 
-**2. Create a GitHub Repository:**
-- Go to [GitHub](https://github.com) and create a new, empty repository.
-- Follow GitHub's instructions to push your existing local project to the new repository.
+The application uses ComfyUI for image generation. You can configure:
 
----
+- `COMFYUI_PROVIDER`: 'comfyai' (free) or 'runcomfy' (production)
+- `COMFYUI_API_KEY`: Required for RunComfy provider
+- `PORT`: Backend port (defaults to 3001)
 
-## Step 2: Deploy to Vercel (Go Live!)
+## Usage
 
-1.  **Sign Up for Vercel:** Go to [vercel.com](https://vercel.com) and sign up with your GitHub account. It's free.
-2.  **Import Project:**
-    - On your Vercel dashboard, click "Add New... -> Project".
-    - Select your GitHub repository. Vercel will automatically detect that it's a static project with serverless functions.
-3.  **Configure Environment Variable (CRITICAL):**
-    - Expand the "Environment Variables" section.
-    - Add a new variable:
-      - **Name:** `REPLICATE_API_TOKEN`
-      - **Value:** Paste your secret Replicate API token here (the one that starts with `r8_...`).
-4.  **Deploy:** Click the "Deploy" button.
+1. Upload a face photo using the image uploader
+2. Choose from AI-suggested poses, lighting, and styling options
+3. Click "Generate Portrait" to create a professional photorealistic image
+4. Download or share your generated portrait
 
-Wait a few moments, and Vercel will provide you with a live URL (e.g., `your-project-name.vercel.app`). **Your application is now live on the internet!**
+## Content Policy
 
----
+This application is designed for creating professional, artistic portraits suitable for business use, social media profiles, and creative projects. Content generation is limited to appropriate, non-explicit imagery.
 
-## Step 3: Local Development (The New Way)
+## Technologies Used
 
-You no longer need to run a separate server. Vercel provides a powerful tool to simulate the entire cloud environment on your local machine.
-
-1.  **Install Vercel CLI:**
-    - Open your terminal and run this command once: `npm install -g vercel`
-2.  **Link Your Project:**
-    - In your project directory in the terminal, run: `vercel link`
-    - Follow the prompts to link your local folder to the Vercel project you created.
-3.  **Run the Development Server:**
-    - Instead of `npm start`, you will now use this command:
-      ```
-      vercel dev
-      ```
-    - This single command starts a local server that runs both your frontend AND your serverless functions, exactly as they would run in production. It will even use a local version of your environment variables.
-4.  **Open the App:** Your application will be running at a local URL, typically `http://localhost:3000`.
-
----
-
-## Troubleshooting
-
-### "Server Connection Issue" on Local Development
-
-This error means the `vercel dev` command is not running.
-
-**Solution:**
-1.  Make sure you have installed the Vercel CLI (`npm install -g vercel`).
-2.  **You must run `vercel dev` in your terminal and keep that terminal window open while you use the application locally.**
-3.  The first time you run `vercel dev`, it might ask to link the project and download your environment variables. Say yes (`Y`) to these prompts.
-
-### Error: "You did not pass a valid authentication token"
-
-This is a common error after setup. It means the backend successfully contacted Replicate, but Replicate rejected the request due to an invalid or missing API key.
-
-**Solution:** Verify that your `REPLICATE_API_TOKEN` is correctly configured.
-
-#### ➡️ Fixing on Vercel (Live Website)
-1.  Go to your **Vercel Dashboard** and select your project.
-2.  Navigate to the **Settings** tab, then click on **Environment Variables**.
-3.  Check that a variable named `REPLICATE_API_TOKEN` exists.
-4.  **Verify its value.** Ensure there are no extra spaces. The value must start with `r8_...`.
-5.  If you make any changes, you may need to trigger a new deployment. Go to the **Deployments** tab and redeploy the latest commit.
-
-#### ➡️ Fixing on Local Development (`vercel dev`)
-1.  In the **root directory** of your project, ensure you have a file named exactly `.env`.
-2.  Open the `.env` file and ensure it contains the line (replace with your actual token):
-    ```
-    REPLICATE_API_TOKEN=r8_YourSecretReplicateTokenHere
-    ```
-3.  **Important:** If `vercel dev` is running, you **must stop it** (Ctrl + C) and **restart it** for it to load the changes from the `.env` file.
+- React 19 with TypeScript
+- Vite for fast development and building
+- Express.js backend
+- ComfyUI for AI image generation
+- FLUX and PuLID models for face preservation
