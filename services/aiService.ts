@@ -1,8 +1,9 @@
 import type { UploadedImage, GenerationOptions } from '../types';
 
-// Use relative paths for API endpoints. This works for both local dev (vercel dev) and production.
-const GENERATE_URL = '/api/generate';
-const HEALTH_URL = '/api/health';
+// Use backend server URLs for API endpoints
+const BACKEND_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
+const GENERATE_URL = `${BACKEND_BASE_URL}/api/generate`;
+const HEALTH_URL = `${BACKEND_BASE_URL}/api/health`;
 
 /**
  * Checks if the serverless backend is running and accessible.
