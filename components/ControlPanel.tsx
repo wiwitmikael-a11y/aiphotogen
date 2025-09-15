@@ -19,7 +19,7 @@ const ServerStatusIndicator: React.FC<{ isOnline: boolean }> = ({ isOnline }) =>
     <div className="p-4 mb-6 bg-yellow-900/30 border border-yellow-700 rounded-lg text-yellow-300 animate-fade-in" role="alert">
       <h3 className="font-bold text-md">Server Connection Issue</h3>
       <p className="text-sm mt-1">
-        Could not connect to the local AI server. Please run <code className="bg-base-300 px-1 py-0.5 rounded text-yellow-200">vercel dev</code> in your terminal.
+        Could not connect to the backend server. Please ensure the application is running properly.
       </p>
     </div>
   );
