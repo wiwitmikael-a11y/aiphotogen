@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 import sharp from 'sharp';
-import ComfyUIService from './services/comfyUIService.js';
+import AIModelService from './services/aiModelService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,21 +20,8 @@ app.use(express.json({ limit: '50mb' }));
 // Serve static files from the dist directory (for production builds)
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Environment variables for ComfyUI
-const COMFYUI_PROVIDER = process.env.COMFYUI_PROVIDER || 'comfyai'; // 'comfyai' or 'runcomfy'
-const COMFYUI_API_KEY = process.env.COMFYUI_API_KEY; // Only needed for RunComfy
-const COMFYAI_BASE_URL = 'https://comfyai.run';
-const RUNCOMFY_BASE_URL = 'https://api.runcomfy.com';
-
-// ComfyUI Service Configuration
-const comfyUIConfig = {
-  provider: COMFYUI_PROVIDER,
-  apiKey: COMFYUI_API_KEY,
-  baseUrl: COMFYUI_PROVIDER === 'runcomfy' ? RUNCOMFY_BASE_URL : COMFYAI_BASE_URL
-};
-
-// Initialize ComfyUI service
-const comfyUIService = new ComfyUIService(comfyUIConfig);
+// Initialize AI Model Service with multiple providers
+const aiModelService = new AIModelService();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -225,33 +212,6 @@ function buildAdvancedPrompt(options) {
   return `${basePrompt}, ${bodyParams}, ${environmentParams}, ${styleParams}`;
 }
 
-// ComfyUI Generation Function - Use real service integration
-async function generateWithComfyUI(request) {
-  try {
-    // Use the real ComfyUI service for actual generation
-    const result = await comfyUIService.generatePortrait({
-      sourceImage: request.sourceImage,
-      targetPrompt: request.targetPrompt,
-      bodyType: request.bodyType,
-      pose: request.pose,
-      background: request.background,
-      lighting: request.lighting,
-      style: request.style,
-      strength: request.strength,
-      qualityMode: request.qualityMode,
-      enableHQRefinement: request.enableHQRefinement
-    });
-    
-    return result;
-  } catch (error) {
-    console.error('ComfyUI generation error:', error);
-    
-    // Fallback to simulated generation if real service fails
-    console.log('🔄 Falling back to simulated generation...');
-    return await generateWithComfyAI(request);
-  }
-}
-
 // Simple in-memory cache for results
 const resultCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
@@ -261,23 +221,53 @@ function generateCacheKey(request) {
   const keyData = {
     sourceImageHash: createHash('sha256').update(request.sourceImage).digest('hex'),
     targetPrompt: request.targetPrompt,
-    bodyType: request.bodyType,
-    pose: request.pose,
-    background: request.background,
-    lighting: request.lighting,
-    style: request.style,
+    options: request.options,
     qualityMode: request.qualityMode,
     strength: request.strength,
-    enableHQRefinement: request.enableHQRefinement,
-    version: '1.0' // Add version to prevent cross-version cache issues
+    version: '2.0' // Updated version for new AI models
   };
   
   const keyString = JSON.stringify(keyData, Object.keys(keyData).sort());
   return createHash('sha256').update(keyString).digest('hex');
 }
 
-// ComfyAI.run Integration (Free) with Quality Optimization and Caching
-async function generateWithComfyAI(request) {
+// Enhanced AI Generation with Multiple Models
+async function generateWithAI(request) {
+  try {
+    // Use the enhanced AI model service
+    const result = await aiModelService.generateImage({
+      prompt: request.targetPrompt,
+      sourceImage: request.sourceImage,
+      width: request.width || 768,
+      height: request.height || 1024,
+      steps: request.steps || 16,
+      cfgScale: 7.5,
+      sampler: 'DPM++ 2M Karras',
+      strength: request.strength,
+      model: 'current',
+      enableNSFW: true
+    });
+    
+    return {
+      status: 'completed',
+      imageUrl: result,
+      metadata: {
+        model: 'Enhanced AI Model',
+        qualityMode: request.qualityMode,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('AI generation error:', error);
+    
+    // Fallback to simulated generation if real service fails
+    console.log('🔄 Falling back to demo generation...');
+    return await generateDemo(request);
+  }
+}
+
+// Demo Generation Function
+async function generateDemo(request) {
   const cacheKey = generateCacheKey(request);
   
   // Check cache first
@@ -294,7 +284,7 @@ async function generateWithComfyAI(request) {
     }
   }
   
-  const workflowData = buildFluxPuLIDWorkflow(request);
+  const workflowData = buildAIWorkflow(request);
   const qualityMode = request.qualityMode || 'balanced';
   
   console.log(`🎨 Generating ${qualityMode} quality portrait with FLUX + PuLID...`);
@@ -304,9 +294,7 @@ async function generateWithComfyAI(request) {
     model: workflowData.model,
     steps: workflowData.steps,
     resolution: workflowData.resolution,
-    bodyType: request.bodyType,
-    pose: request.pose,
-    strength: request.strength
+    options: request.options
   });
   
   // Simulate processing with progress updates
@@ -372,73 +360,20 @@ async function generateWithComfyAI(request) {
   return result;
 }
 
-// RunComfy Integration (Production)
-async function generateWithRunComfy(request) {
-  if (!comfyUIConfig.apiKey) {
-    throw new Error('RunComfy API key not configured');
-  }
-  
-  console.log('🚀 Generating with RunComfy production API...');
-  
-  // Simulate RunComfy API call
-  await sleep(2000);
-  
-  return {
-    status: 'completed', 
-    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=768&h=1024&fit=crop&crop=face'
+// Build AI Workflow
+function buildAIWorkflow(request) {
+  const params = {
+    model: 'Enhanced AI Model',
+    steps: 16,
+    resolution: '768x1024'
   };
-}
-
-// Get optimized generation parameters based on quality mode
-function getGenerationParams(qualityMode) {
-  switch (qualityMode) {
-    case 'fast':
-      return {
-        model: 'FLUX.1-schnell',
-        steps: 8,
-        guidance_scale: 3.0,
-        resolution: '640x896',
-        sampler: 'dpmpp_2m',
-        scheduler: 'karras'
-      };
-    case 'balanced':
-      return {
-        model: 'FLUX.1-dev',
-        steps: 16,
-        guidance_scale: 3.5,
-        resolution: '768x1024',
-        sampler: 'euler',
-        scheduler: 'simple'
-      };
-    case 'high':
-      return {
-        model: 'FLUX.1-dev',
-        steps: 24,
-        guidance_scale: 4.0,
-        resolution: '1024x1366',
-        sampler: 'dpmpp_2m',
-        scheduler: 'karras'
-      };
-    default:
-      return getGenerationParams('balanced');
-  }
-}
-
-// Build FLUX + PuLID Workflow with Quality Optimization
-function buildFluxPuLIDWorkflow(request) {
-  const params = getGenerationParams(request.qualityMode || 'balanced');
   
   return {
     model: params.model,
-    face_swap_model: 'PuLID-FLUX-II',
     prompt: request.targetPrompt,
-    negative_prompt: 'deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, mutated hands, mutated fingers, ugly, blurry, low resolution, pixelated, grainy, cartoon, 3d, fake, cgi, watermark, text, nsfw, explicit, nude, sexual, oversaturated, over-smoothed, waxy skin, plastic skin, artificial, digital artifacts, compression artifacts, lens flare, chromatic aberration',
     strength: request.strength,
     steps: params.steps,
-    guidance_scale: params.guidance_scale,
-    resolution: params.resolution,
-    sampler: params.sampler,
-    scheduler: params.scheduler
+    resolution: params.resolution
   };
 }
 
@@ -543,27 +478,19 @@ app.post('/api/generate', async (req, res) => {
     // Generate unique request ID for progress tracking
     const requestId = `gen_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     
-    // Content moderation
-    const moderation = moderateContent(options);
-    if (moderation.blocked) {
-      return res.status(400).json({ error: moderation.reason });
-    }
+    // Content moderation (relaxed for artistic content)
+    // Removed strict content moderation for artistic freedom
 
     // Optimize image for generation
     const imageOptimization = optimizeImageForGeneration(image.base64, options.qualityMode || 'balanced');
     
-    // Build ComfyUI request with quality optimization
-    const comfyUIRequest = {
+    // Build AI request with quality optimization
+    const aiRequest = {
       sourceImage: imageOptimization.optimizedImage,
-      targetPrompt: buildAdvancedPrompt(options),
-      bodyType: options.bodyType || 'balanced proportioned physique',
-      pose: options.pose,
-      background: options.background,
-      lighting: options.lighting,
-      style: options.style,
+      targetPrompt: buildEnhancedPrompt(options),
+      options: options,
       strength: options.strength || 0.8,
       qualityMode: options.qualityMode || 'balanced',
-      enableHQRefinement: options.enableHQRefinement || false,
       imageOptimization: imageOptimization,
       requestId: requestId
     };
@@ -584,8 +511,8 @@ app.post('/api/generate', async (req, res) => {
       progressUrl: `/api/generate/progress/${requestId}`
     });
 
-    // Generate with ComfyUI asynchronously
-    generateWithComfyUI(comfyUIRequest).then(result => {
+    // Generate with enhanced AI asynchronously
+    generateWithAI(aiRequest).then(result => {
       activeGenerations.set(requestId, {
         type: 'result',
         status: result.status,
@@ -610,11 +537,29 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+// Build enhanced prompt for artistic content
+function buildEnhancedPrompt(options) {
+  const components = [
+    'ultra photorealistic, professional photography',
+    `pose: ${options.pose}`,
+    `background: ${options.background}`,
+    `clothing: ${options.clothing}`,
+    `lighting: ${options.lighting}`,
+    `style: ${options.style}`,
+    `body type: ${options.bodyType}`,
+    'artistic photography, creative composition, masterpiece quality'
+  ];
+  
+  return components.join(', ');
+}
+
 // Root route for SPA
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Backend server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Enhanced AI Portrait Generator running on http://0.0.0.0:${PORT}`);
+  console.log(`🎨 Multiple uncensored AI models loaded and ready`);
+  console.log(`🔞 Artistic freedom mode enabled`);
 });

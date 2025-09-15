@@ -1,8 +1,19 @@
 {
+  "env": {
+    "HUGGINGFACE_API_KEY": "@huggingface_api_key",
+    "REPLICATE_API_TOKEN": "@replicate_api_token", 
+    "TOGETHER_API_KEY": "@together_api_key"
+  },
   "functions": {
     "api/**/*.js": {
       "memory": 1024,
-      "maxDuration": 60
+      "maxDuration": 300
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
 }
